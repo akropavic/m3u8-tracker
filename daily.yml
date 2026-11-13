@@ -1,0 +1,41 @@
+
+name: Daily M3U8 Tracker
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  tracker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository indir
+        uses: actions/checkout@v4
+
+      - name: Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Gereksinimleri yükle
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Botu çalıştır
+        run: python main.py
+
+      - name: Sonuçları kaydet
+        run: |
+          git config user.name "M3U8 Bot"
+          git config user.email "actions@github.com"
+          git add stream.txt
+          git diff --cached --quiet || (
+            git commit -m "Update stream links"
+            git push
+          )
