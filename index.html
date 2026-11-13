@@ -7,9 +7,7 @@
 <title>CANLI YAYIN</title>
 
 <style>
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     margin: 0;
@@ -26,7 +24,6 @@ body {
 
 h1 {
     font-size: 25px;
-    font-weight: 700;
     margin-bottom: 25px;
 }
 
@@ -60,7 +57,6 @@ h1 {
     border-radius: 5px;
     overflow: hidden;
     aspect-ratio: 16 / 9;
-    position: relative;
 }
 
 video {
@@ -71,9 +67,10 @@ video {
 }
 
 .status {
-    color: #777;
+    color: #888;
     font-size: 12px;
     margin-top: 12px;
+    overflow-wrap: anywhere;
 }
 
 @media(max-width: 550px) {
@@ -111,12 +108,12 @@ video {
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 
 <script>
 
-// GitHub stream.txt adresini buraya yaz
-const STREAM_URL = "https://raw.githubusercontent.com/akropavic/m3u8-tracker/refs/heads/main/stream.txt";
+const STREAM_URL =
+"https://raw.githubusercontent.com/akropavic/m3u8-tracker/main/stream.txt";
 
 const CHANNELS = [
     "BIRINCI SINIF",
@@ -129,6 +126,11 @@ const video = document.getElementById("video");
 const statusText = document.getElementById("status");
 
 let hls = null;
+let requestNumber = 0;
+
+function status(message) {
+    statusText.textContent = message;
+}
 
 async function getStreams() {
 
@@ -138,22 +140,26 @@ async function getStreams() {
     );
 
     if (!response.ok) {
-        throw new Error("Yayın listesi alınamadı.");
+        throw new Error("TXT yüklenemedi: HTTP " + response.status);
     }
 
     const text = await response.text();
-    const lines = text.split(/\r?\n/);
 
     const streams = {};
     let current = null;
 
-    for (const line of lines) {
+    for (const line of text.split(/\r?\n/)) {
+
         const value = line.trim();
+
+        if (!value) continue;
 
         if (value.startsWith("#")) {
             current = value.substring(1).trim();
             streams[current] = [];
-        } else if (current && value.startsWith("http")) {
+        }
+
+        else if (current && /^https?:\/\//i.test(value)) {
             streams[current].push(value);
         }
     }
@@ -163,24 +169,31 @@ async function getStreams() {
 
 async function playChannel(index) {
 
+    const thisRequest = ++requestNumber;
+
     document.querySelectorAll(".channels button")
         .forEach(button => button.classList.remove("active"));
 
     document.getElementById("btn" + index)
         .classList.add("active");
 
-    statusText.textContent = "Yayın yükleniyor...";
+    status("Yayın adresi alınıyor...");
 
     try {
 
         const streams = await getStreams();
+
+        if (thisRequest !== requestNumber) return;
+
         const links = streams[CHANNELS[index]];
 
         if (!links || !links.length) {
-            throw new Error("Bu kanalda yayın bulunamadı.");
+            throw new Error("Bu kanalda M3U8 bulunamadı.");
         }
 
         const streamUrl = links[0];
+
+        console.log("M3U8:", streamUrl);
 
         if (hls) {
             hls.destroy();
@@ -191,41 +204,78 @@ async function playChannel(index) {
         video.removeAttribute("src");
         video.load();
 
-        if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        if (Hls.isSupported()) {
 
-            video.src = streamUrl;
-            await video.play();
+            status("HLS oynatıcı başlatılıyor...");
 
-        } else if (Hls.isSupported()) {
+            hls = new Hls({
+                enableWorker: true,
+                debug: true
+            });
 
-            hls = new Hls();
+            hls.on(Hls.Events.ERROR, (event, data) => {
+
+                if (thisRequest !== requestNumber) return;
+
+                console.error("HLS ERROR:", data);
+
+                if (data.fatal) {
+                    status(
+                        "Yayın hatası: " +
+                        data.type + " / " +
+                        data.details +
+                        (data.response?.code
+                            ? " / HTTP " + data.response.code
+                            : "")
+                    );
+                }
+            });
+
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+
+                if (thisRequest !== requestNumber) return;
+
+                status("Yayın hazır.");
+
+                video.play().catch(() => {
+                    status("Yayın hazır. Play tuşuna bas.");
+                });
+
+            });
 
             hls.loadSource(streamUrl);
             hls.attachMedia(video);
 
-            hls.on(Hls.Events.MANIFEST_PARSED, async () => {
-                try {
-                    await video.play();
-                    statusText.textContent = "Yayın oynatılıyor.";
-                } catch {
-                    statusText.textContent = "Oynatmak için Play tuşuna basın.";
-                }
+        }
+
+        else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+
+            status("Yerel HLS oynatıcı başlatılıyor...");
+
+            video.src = streamUrl;
+
+            video.onerror = () => {
+                status("Video yüklenemedi. Tarayıcı hata kodu: " +
+                    (video.error?.code || "bilinmiyor"));
+            };
+
+            video.play().catch(() => {
+                status("Yayın hazırsa Play tuşuna bas.");
             });
 
-            hls.on(Hls.Events.ERROR, (event, data) => {
-                if (data.fatal) {
-                    statusText.textContent = "Yayın bağlantısı hatası.";
-                }
-            });
+        }
 
-        } else {
+        else {
             throw new Error("Tarayıcı HLS desteklemiyor.");
         }
 
-        statusText.textContent = "Yayın yükleniyor...";
-
     } catch (error) {
-        statusText.textContent = error.message;
+
+        console.error(error);
+
+        if (thisRequest === requestNumber) {
+            status("HATA: " + error.message);
+        }
     }
 }
 
