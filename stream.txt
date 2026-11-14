@@ -1,5 +1,5 @@
 # BIRINCI SINIF
-https://css.d6e3eds5e065t5.help//b1/tracks-v1a1/mono.m3u8
+https://css.d6e3eds5e065t5.help//hls/b1.m3u8
 
 # IKINCI SINIF
 https://css.d6e3eds5e065t5.help//b2/tracks-v1a1/mono.m3u8
