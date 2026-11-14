@@ -1,0 +1,13 @@
+#EXTM3U
+
+#EXTINF:-1 tvg-name="BEIN SPORTS 1" group-title="SPOR",BEIN SPORTS 1
+https://css.d6e3eds5e065t5.help//hls/b1.m3u8
+
+#EXTINF:-1 tvg-name="BEIN SPORTS 2" group-title="SPOR",BEIN SPORTS 2
+https://css.d6e3eds5e065t5.help//b2/tracks-v1a1/mono.m3u8
+
+#EXTINF:-1 tvg-name="BEIN SPORTS MAX 1" group-title="SPOR",BEIN SPORTS MAX 1
+https://css.d6e3eds5e065t5.help//bm1/tracks-v1a1/mono.m3u8
+
+#EXTINF:-1 tvg-name="BEIN SPORTS MAX 2" group-title="SPOR",BEIN SPORTS MAX 2
+https://css.d6e3eds5e065t5.help//bm2/tracks-v1a1/mono.m3u8
