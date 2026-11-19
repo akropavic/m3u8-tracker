@@ -1,0 +1,12 @@
+# BIRINCI SINIF
+https://css.d6e3eds5e065t5.help//hls/b1.m3u8
+
+# IKINCI SINIF
+https://css.d6e3eds5e065t5.help//b2/tracks-v1a1/mono.m3u8
+
+# UCUNCU SINIF
+https://css.d6e3eds5e065t5.help//bm1/tracks-v1a1/mono.m3u8
+
+# DORDUNCU SINIF
+https://css.d6e3eds5e065t5.help//bm2/tracks-v1a1/mono.m3u8
+
